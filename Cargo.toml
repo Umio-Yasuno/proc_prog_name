@@ -2,6 +2,9 @@
 name = "proc_prog_name"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+authors = ["Umio Yasuno <coelacanth_dream@proton.me>"]
+description = "Get the program name from the proc filesystem."
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
