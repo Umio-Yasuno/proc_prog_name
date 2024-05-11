@@ -28,8 +28,25 @@ impl ProcProgEntry {
 
         proc_dir.filter_map(|dir_entry| {
             let path = dir_entry.ok()?.path();
+            let name = get_name_from_proc_path(&path)?;
             let pid = path.file_name().and_then(|name| name.to_str())?.parse::<i32>().ok()?;
-            let name = get_name_from_proc_path(path)?;
+
+            Some(Self { pid, name })
+        }).collect()
+    }
+
+    pub fn get_all_entries_with_name_filter(name_filter: &[&str]) -> Vec<Self> {
+        let Ok(proc_dir) = fs::read_dir("/proc") else { return Vec::new() };
+
+        proc_dir.filter_map(|dir_entry| {
+            let path = dir_entry.ok()?.path();
+            let name = get_name_from_proc_path(&path)?;
+
+            if !name_filter.contains(&name.as_str()) {
+                return None;
+            }
+
+            let pid = path.file_name().and_then(|name| name.to_str())?.parse::<i32>().ok()?;
 
             Some(Self { pid, name })
         }).collect()
