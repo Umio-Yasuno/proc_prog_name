@@ -24,15 +24,26 @@ impl ProcProgEntry {
     }
 
     pub fn get_all_proc_prog_entries() -> Vec<Self> {
-        let Ok(proc_dir) = fs::read_dir("/proc") else { return Vec::new() };
+        let mut buf = Vec::with_capacity(64);
 
-        proc_dir.filter_map(|dir_entry| {
-            let path = dir_entry.ok()?.path();
-            let name = get_name_from_proc_path(&path)?;
-            let pid = path.file_name().and_then(|name| name.to_str())?.parse::<i32>().ok()?;
+        Self::get_all_entries_with_buffer(&mut buf);
 
-            Some(Self { pid, name })
-        }).collect()
+        buf
+    }
+
+    pub fn get_all_entries_with_buffer(buf: &mut Vec<Self>) {
+        let Ok(proc_dir) = fs::read_dir("/proc") else { return };
+
+        for dir_entry in proc_dir {
+            let Ok(dir_entry) = dir_entry else { continue };
+            let path = dir_entry.path();
+
+            let Some(name) = get_name_from_proc_path(&path) else { continue };
+            let Some(s) = path.file_name().and_then(|file_name| file_name.to_str()) else { continue };
+            let Ok(pid) = s.parse::<i32>() else { continue };
+
+            buf.push(Self { name, pid });
+        }
     }
 
     pub fn get_all_entries_with_name_filter(name_filter: &[&str]) -> Vec<Self> {
@@ -81,7 +92,7 @@ fn get_name_from_str(s: &str) -> Option<String> {
     let s = if let Some((ss, _)) = s.split_once('\0') {
         ss
     } else {
-        &s
+        s
     };
     let s = s.split(['\\', '/']).last()?;
 
