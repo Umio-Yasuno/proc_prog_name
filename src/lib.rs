@@ -26,12 +26,12 @@ impl ProcProgEntry {
     pub fn get_all_proc_prog_entries() -> Vec<Self> {
         let mut buf = Vec::with_capacity(64);
 
-        Self::get_all_entries_with_buffer(&mut buf);
+        Self::update_entries(&mut buf);
 
         buf
     }
 
-    pub fn get_all_entries_with_buffer(buf: &mut Vec<Self>) {
+    pub fn update_entries(buf: &mut Vec<Self>) {
         let Ok(proc_dir) = fs::read_dir("/proc") else { return };
 
         for dir_entry in proc_dir {
