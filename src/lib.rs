@@ -46,21 +46,32 @@ impl ProcProgEntry {
         }
     }
 
-    pub fn get_all_entries_with_name_filter(name_filter: &[&str]) -> Vec<Self> {
-        let Ok(proc_dir) = fs::read_dir("/proc") else { return Vec::new() };
+    pub fn update_entries_with_name_filter<T: AsRef<str>>(buf: &mut Vec<Self>, name_filter: &[T]) {
+        let Ok(proc_dir) = fs::read_dir("/proc") else { return };
 
-        proc_dir.filter_map(|dir_entry| {
-            let path = dir_entry.ok()?.path();
-            let name = get_name_from_proc_path(&path)?;
+        for dir_entry in proc_dir {
+            let Ok(dir_entry) = dir_entry else { continue };
+            let path = dir_entry.path();
 
-            if !name_filter.contains(&name.as_str()) {
-                return None;
+            let Some(name) = get_name_from_proc_path(&path) else { continue };
+
+            if !name_filter.iter().map(|s| s.as_ref()).any(|filter| filter == name) {
+                continue;
             }
 
-            let pid = path.file_name().and_then(|name| name.to_str())?.parse::<i32>().ok()?;
+            let Some(s) = path.file_name().and_then(|file_name| file_name.to_str()) else { continue };
+            let Ok(pid) = s.parse::<i32>() else { continue };
 
-            Some(Self { pid, name })
-        }).collect()
+            buf.push(Self { name, pid });
+        }
+    }
+
+    pub fn get_all_entries_with_name_filter<T: AsRef<str>>(name_filter: &[T]) -> Vec<Self> {
+        let mut buf = Vec::with_capacity(64);
+
+        Self::update_entries_with_name_filter(&mut buf, name_filter);
+
+        buf
     }
 }
 
