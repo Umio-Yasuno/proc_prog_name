@@ -92,10 +92,10 @@ fn get_name_from_proc_path<P: AsRef<Path>>(path: P) -> Option<String> {
     let [name_from_exe, name_from_cmdline] = [exe, cmdline].map(|s| get_name_from_str(&s));
     let [name_from_exe, name_from_cmdline] = [name_from_exe?, name_from_cmdline?];
 
-    let name = if name_from_cmdline.starts_with(comm.trim_end()) {
-        name_from_cmdline
-    } else {
+    let name = if name_from_exe.starts_with(comm.trim_end()) {
         name_from_exe
+    } else {
+        name_from_cmdline
     };
 
     Some(name)
