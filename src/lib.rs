@@ -1,7 +1,7 @@
 // ref: https://gitlab.freedesktop.org/mesa/mesa/-/blob/main/src/util/u_process.c
 
 use std::fs;
-use std::path::{Path,PathBuf};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct ProcProgEntry {
@@ -34,14 +34,20 @@ impl ProcProgEntry {
     }
 
     pub fn update_entries(buf: &mut Vec<Self>) {
-        let Ok(proc_dir) = fs::read_dir("/proc") else { return };
+        let Ok(proc_dir) = fs::read_dir("/proc") else {
+            return;
+        };
 
         for dir_entry in proc_dir {
             let Ok(dir_entry) = dir_entry else { continue };
             let path = dir_entry.path();
 
-            let Some(name) = get_name_from_proc_path(&path) else { continue };
-            let Some(s) = path.file_name().and_then(|file_name| file_name.to_str()) else { continue };
+            let Some(name) = get_name_from_proc_path(&path) else {
+                continue;
+            };
+            let Some(s) = path.file_name().and_then(|file_name| file_name.to_str()) else {
+                continue;
+            };
             let Ok(pid) = s.parse::<i32>() else { continue };
 
             buf.push(Self { name, pid });
@@ -49,19 +55,29 @@ impl ProcProgEntry {
     }
 
     pub fn update_entries_with_name_filter<T: AsRef<str>>(buf: &mut Vec<Self>, name_filter: &[T]) {
-        let Ok(proc_dir) = fs::read_dir("/proc") else { return };
+        let Ok(proc_dir) = fs::read_dir("/proc") else {
+            return;
+        };
 
         for dir_entry in proc_dir {
             let Ok(dir_entry) = dir_entry else { continue };
             let path = dir_entry.path();
 
-            let Some(name) = get_name_from_proc_path(&path) else { continue };
+            let Some(name) = get_name_from_proc_path(&path) else {
+                continue;
+            };
 
-            if !name_filter.iter().map(|s| s.as_ref()).any(|filter| filter == name) {
+            if !name_filter
+                .iter()
+                .map(|s| s.as_ref())
+                .any(|filter| filter == name)
+            {
                 continue;
             }
 
-            let Some(s) = path.file_name().and_then(|file_name| file_name.to_str()) else { continue };
+            let Some(s) = path.file_name().and_then(|file_name| file_name.to_str()) else {
+                continue;
+            };
             let Ok(pid) = s.parse::<i32>() else { continue };
 
             buf.push(Self { name, pid });
@@ -79,7 +95,11 @@ impl ProcProgEntry {
 
 // `/proc/<pid>`
 fn get_pid_from_proc_path<P: AsRef<Path>>(path: P) -> Option<i32> {
-    path.as_ref().file_name().and_then(|name| name.to_str())?.parse::<i32>().ok()
+    path.as_ref()
+        .file_name()
+        .and_then(|name| name.to_str())?
+        .parse::<i32>()
+        .ok()
 }
 
 // `/proc/<pid>`
@@ -109,7 +129,9 @@ fn get_name_from_str(s: &str) -> Option<String> {
     };
     let s = s.split(['\\', '/']).last()?;
 
-    if s.is_empty() { return None }
+    if s.is_empty() {
+        return None;
+    }
 
     Some(s.to_string())
 }
