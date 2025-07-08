@@ -1,6 +1,7 @@
 // ref: https://gitlab.freedesktop.org/mesa/mesa/-/blob/main/src/util/u_process.c
 
-use std::fs;
+use std::fs::{self, File};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone)]
@@ -106,15 +107,20 @@ fn get_pid_from_proc_path<P: AsRef<Path>>(path: P) -> Option<i32> {
 fn get_name_from_proc_path<P: AsRef<Path>>(path: P) -> Option<String> {
     let path = path.as_ref();
     let exe = fs::read_link(path.join("exe")).ok()?.display().to_string();
-    let cmdline = fs::read_to_string(path.join("cmdline")).ok()?;
     let comm = fs::read_to_string(path.join("comm")).ok()?;
-
-    let [name_from_exe, name_from_cmdline] = [exe, cmdline].map(|s| get_name_from_str(&s));
-    let [name_from_exe, name_from_cmdline] = [name_from_exe?, name_from_cmdline?];
+    let name_from_exe = get_name_from_str(&exe)?;
 
     let name = if name_from_exe.starts_with(comm.trim_end()) {
         name_from_exe
     } else {
+        let cmdline = {
+            let mut buf_cmdline = [0u8; 128];
+            let mut f = File::open(path.join("cmdline")).ok()?;
+            f.read_exact(&mut buf_cmdline);
+            String::from_utf8_lossy(&buf_cmdline).into_owned()
+        };
+        let name_from_cmdline = get_name_from_str(&cmdline)?;
+
         name_from_cmdline
     };
 
